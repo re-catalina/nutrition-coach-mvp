@@ -1,0 +1,137 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String             @id @default(cuid())
+  email            String             @unique
+  name             String?
+  timezone         String             @default("UTC")
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  bodyMetrics      BodyMetric[]
+  calorieTargets   CalorieTarget[]
+  foodEntries      FoodEntry[]
+  dailySummaries   DailySummary[]
+  events           Event[]
+  menuAnalyses     MenuAnalysis[]
+  coachInteractions CoachInteraction[]
+  metricEvents     MetricEvent[]
+}
+
+model BodyMetric {
+  id            String   @id @default(cuid())
+  userId        String
+  weightKg      Float
+  heightCm      Float
+  age           Int
+  sex           String
+  activityLevel String
+  goalType      String
+  createdAt     DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CalorieTarget {
+  id              String   @id @default(cuid())
+  userId          String
+  bmr             Float
+  tdee            Float
+  targetCalories  Int
+  strategyPercent Float
+  createdAt       DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model FoodEntry {
+  id          String          @id @default(cuid())
+  userId      String
+  rawText     String
+  mealType    String?
+  eatenAt     DateTime
+  confidence  Float
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items       FoodEntryItem[]
+}
+
+model FoodEntryItem {
+  id            String    @id @default(cuid())
+  foodEntryId   String
+  sourceFoodId  String
+  foodName      String
+  quantity      String
+  calories      Int
+  proteinGrams  Float
+  carbsGrams    Float
+  fatGrams      Float
+  confidence    Float
+  foodEntry     FoodEntry @relation(fields: [foodEntryId], references: [id], onDelete: Cascade)
+}
+
+model DailySummary {
+  id               String   @id @default(cuid())
+  userId           String
+  date             DateTime
+  calorieTarget    Int
+  consumedCalories Int
+  proteinGrams     Float    @default(0)
+  carbsGrams       Float    @default(0)
+  fatGrams         Float    @default(0)
+  remainingCalories Int
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+}
+
+model Event {
+  id               String   @id @default(cuid())
+  userId           String
+  restaurantName   String
+  plannedItemsText String
+  plannedDrinks    String?
+  estimatedCalories Int
+  guidanceSummary  String
+  createdAt        DateTime @default(now())
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model MenuAnalysis {
+  id               String   @id @default(cuid())
+  userId           String
+  inputType        String
+  inputText        String?
+  imageUrl         String?
+  parsedMenuJson   Json
+  recommendationsJson Json
+  confidence       Float
+  createdAt        DateTime @default(now())
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CoachInteraction {
+  id            String   @id @default(cuid())
+  userId        String
+  prompt        String
+  response      String
+  contextJson   Json?
+  createdAt     DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model MetricEvent {
+  id         String   @id @default(cuid())
+  userId     String?
+  eventName  String
+  properties Json?
+  createdAt  DateTime @default(now())
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
